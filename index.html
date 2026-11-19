@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#131b21">
+  <meta name="description" content="Carte de Looty Bay dans ROB RUN : poubelles fouillables, tournée de plantes sans clé, plans des bâtiments et parcours duo pour les caméras.">
+  <title>ROB RUN · Plantes, poubelles & carte</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="data.js"></script>
+  <script defer src="base-map.js"></script>
+  <script defer src="route.js"></script>
+  <script defer src="rooms.js"></script>
+  <script defer src="key-catalog.js"></script>
+  <script defer src="point-rules.js"></script>
+  <script defer src="plants.js"></script>
+  <script defer src="plants-route.js"></script>
+  <script defer src="trash.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body data-view="doors">
+  <header class="app-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">R</span><div><strong>ROB RUN<span class="brand-slash"> / </span><span class="brand-section">LOOTY BAY</span></strong><p>Clés, plans et parcours duo.</p></div></div>
+    <div class="header-info"><span class="epic-dot"></span><strong>70 pts / caméra violette</strong><span class="header-condition">Notoriété 3 requise</span></div><div class="plant-header-info"><span>●</span> Plantes · sans clé</div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar" aria-label="Rechercher et filtrer les clés, les objets et les bâtiments">
+      <div class="sidebar-top"><p class="eyebrow" id="sidebar-eyebrow">LOOTY BAY · PLANS & CLÉS</p><h1 id="sidebar-title">Carte complète</h1><p class="intro">Retrouve une clé par son nom, ouvre un bâtiment et choisis ce qui apparaît sur la carte.</p></div>
+      <section class="quick-launch" aria-label="Lancement rapide">
+        <p class="eyebrow">LANCEMENT RAPIDE</p>
+        <label for="quick-plants"><input type="checkbox" id="quick-plants"><span><strong>Plantes sans clé</strong><small>Repérage en civil · liste + tracé</small></span><span aria-hidden="true">↗</span></label>
+        <label for="quick-trash" class="quick-trash"><input type="checkbox" id="quick-trash" data-layer="trash"><span><strong>Poubelles fouillables</strong><small id="trash-quick-count">Emplacements dans toute la ville</small></span><span aria-hidden="true">▤</span></label>
+        <button type="button" id="trash-city" class="trash-city">Voir toutes les poubelles ↗</button>
+      </section>
+      <section id="object-detail" class="object-detail" aria-live="polite" hidden></section>
+      <section id="trash-panel" class="trash-panel" aria-label="Poubelles fouillables de Looty Bay" hidden>
+        <p class="trash-coverage" id="trash-coverage"></p>
+        <label class="map-search" for="trash-search"><span>Retrouver une poubelle</span><input id="trash-search" type="search" placeholder="Numéro, quartier ou bâtiment proche…" autocomplete="off"></label>
+        <p id="trash-result-count" class="trash-result-count" aria-live="polite"></p>
+        <nav id="trash-list" aria-label="Emplacements des poubelles"></nav>
+        <details class="trash-sources"><summary>Source et couverture</summary><p id="trash-source-note"></p><p>Les noms de bâtiments servent à t’orienter : « près de » indique le repère voisin, pas une poubelle à l’intérieur de ce bâtiment. Les limites des quartiers sont indicatives.</p><p>Les positions ne renseignent pas le butin restant sur ton serveur. Aucun délai de réapparition n’est confirmé.</p><p><a href="https://robrun.fun/en/" target="_blank" rel="noopener noreferrer">Carte RobRun.fun</a> · <a href="https://robrun.info/map/" target="_blank" rel="noopener noreferrer">Données ROB RUN Info</a></p></details>
+      </section>
+      <section id="plant-panel" class="plant-panel" aria-label="Liste de courses des plantes" hidden>
+        <label class="plant-sector-label" for="plant-sector">Couverture de la carte</label>
+        <select id="plant-sector"><option value="all">Toute la ville · tous les repères</option><option value="west">Sunny Beach</option><option value="east">Downtown</option><option value="north">Loraine Hills</option><option value="palmside">Palmside</option></select>
+        <p id="plant-coverage" class="plant-coverage"></p>
+        <div class="plant-rule"><strong>Tournée de repérage · sans clé ni décodeur</strong><p>Les lieux signalés sont inclus : club, hôtels, commerces et garages. Inspecte seulement les parties ouvertes ; ignore les pièces VIP, bureaux et caves verrouillés.</p></div>
+        <label id="plant-extra-label" class="plant-extra"><input type="checkbox" id="plant-extra">Ajouter les autres commerces à prospecter · sans spawn confirmé</label>
+        <div class="plant-next" id="plant-next" aria-live="polite"></div>
+        <div class="plant-progress"><strong id="plant-progress" aria-live="polite"></strong><button type="button" id="plant-reset">Nouvelle tournée</button></div>
+        <p class="plant-check-help">Coche après vérification, même si le spot est vide. Au club, regarde à l’étage ; dans chaque hôtel, contrôle les deux côtés du hall.</p>
+        <h2 class="plant-list-title plant-reported-title">Strip-club et hôtels · inclus dans la tournée</h2>
+        <ol id="plant-reported" class="plant-checklist"></ol>
+        <h2 class="plant-list-title">Positions précises · sans clé d’après le plan</h2>
+        <ol id="plant-checklist" class="plant-checklist"></ol>
+        <h2 class="plant-list-title">Z / G · Autres lieux et garages à vérifier</h2>
+        <ol id="plant-zones" class="plant-checklist"></ol>
+        <details class="plant-prospects"><summary id="plant-prospects-title">? · Autres lieux à prospecter</summary><p>Maisons et commerces de catégories citées dans les guides. Ce ne sont pas des spawns confirmés dans chacun de ces bâtiments.</p><ol id="plant-prospects-list" class="plant-checklist"></ol></details>
+        <div class="plant-warning"><strong>Repère d’abord en civil.</strong><p>Pour voler le plant, prépare ton transport puis mets le masque. Quitte Looty Bay pour redevenir civil.</p><p>Aucune disponibilité en direct. Ni présence garantie, ni délai de réapparition confirmé.</p></div>
+        <details class="plant-sources"><summary>Couverture, sources et nouvelle tournée</summary><p>Les 8 coordonnées de RobRun.fun sont complétées par les signalements des joueurs : étage du strip-club, tables des halls des hôtels jaune et bleu, café, station et garages au nord. Un repère de zone situe le bâtiment ou l’étage ; il ne prétend pas donner la coordonnée exacte d’un plant.</p><p>La description de la carte identifie le Seasons Hotel comme jaune et le Reef Hotel comme bleu. Pour les garages, le témoignage concerne le quartier : chaque propriété est une étape de vérification, pas une présence garantie. Au Grand Hotel, la réserve à carte dorée reste exclue du parcours sans clé.</p><p>Palmside : aucune position documentée dans les sources consultées. Cette carte ne prouve pas la liste exhaustive des spawns possibles du jeu.</p><ul id="plant-source-links"></ul><p>Vérifié le 18/11/2026. « Nouvelle tournée » remet uniquement les coches à zéro ; cela ne fait pas réapparaître le butin. Les coches des points déjà présents sont conservées.</p><p id="plant-storage-note">Les coches sont conservées dans ce navigateur.</p></details>
+      </section>
+      <section class="atlas-controls" id="atlas-controls" aria-label="Recherche et filtres de la carte">
+        <label class="map-search" for="map-search"><span>Rechercher sur la carte</span><input id="map-search" type="search" placeholder="Rechercher une clé, un bâtiment…" autocomplete="off" spellcheck="false"></label>
+        <label class="district-filter" for="district-filter"><span>Quartier</span><select id="district-filter"><option value="all">Tous les quartiers</option><option value="Downtown">Downtown</option><option value="Sunny Beach">Sunny Beach</option><option value="Loraine Hills">Loraine Hills</option><option value="Palmside">Palmside</option></select></label>
+        <div class="layer-heading"><strong>Afficher sur la carte</strong><div class="layer-actions"><button id="show-all-layers" type="button">Tout</button><span aria-hidden="true">/</span><button id="hide-all-layers" type="button">Rien</button></div></div>
+        <div class="layer-grid">
+          <label class="layer-chip layer-purple"><input id="layer-purple" data-layer="purple" type="checkbox" checked><span>Clés violettes</span></label>
+          <label class="layer-chip layer-gold"><input id="show-gold-rooms" data-layer="gold" type="checkbox"><span>Clés dorées</span></label>
+          <label class="layer-chip layer-other-keys"><input id="layer-other-keys" data-layer="otherKeys" type="checkbox"><span>Autres clés</span></label>
+          <label class="layer-chip layer-furniture"><input id="layer-furniture" data-layer="furniture" type="checkbox" checked><span>Meubles</span></label>
+          <label class="layer-chip layer-drill"><input id="layer-drill" data-layer="drill" type="checkbox" checked><span>Grands coffres</span></label>
+          <label class="layer-chip layer-small"><input id="layer-small" data-layer="small" type="checkbox" checked><span>Petits coffres</span></label>
+          <label class="layer-chip layer-computers"><input id="layer-computers" data-layer="computers" type="checkbox" checked><span>Ordinateurs</span></label>
+          <label class="layer-chip layer-deposit"><input id="layer-deposit" data-layer="deposit" type="checkbox"><span>Casiers bancaires</span></label>
+          <label class="layer-chip layer-route"><input id="layer-route" data-layer="route" type="checkbox"><span>Parcours duo</span></label>
+          <label class="layer-chip layer-labels"><input id="layer-labels" data-layer="labels" type="checkbox" checked><span>Noms et repères</span></label>
+        </div>
+        <details class="advanced-layers"><summary>Autres objets et sécurité</summary><div class="layer-grid">
+          <label class="layer-chip layer-loot"><input id="layer-loot" data-layer="loot" type="checkbox"><span>Autres objets à ramasser</span></label>
+          <label class="layer-chip layer-security"><input id="layer-security" data-layer="security" type="checkbox"><span>Alarmes et caméras</span></label>
+          <label class="layer-chip layer-atm"><input id="layer-atm" data-layer="atm" type="checkbox"><span>Distributeurs</span></label>
+        </div></details>
+        <p id="atlas-coverage" class="atlas-coverage">28 bâtiments · plans par étage</p>
+        <p id="room-total" aria-live="polite"></p>
+        <p class="atlas-number-note">Les numéros sont des repères de carte, pas le nom des clés.</p>
+      </section>
+      <details class="atlas-section points-method" id="point-method"><summary>Points caméra : barème par type</summary><div id="point-rules-content"></div></details>
+      <div class="plan-controls">
+        <div class="route-mode" role="group" aria-label="Organisation du duo"><button type="button" id="mode-split" aria-pressed="true">Chacun un secteur</button><button type="button" id="mode-together" aria-pressed="false">Rester ensemble</button></div>
+        <label class="drill-toggle"><input type="checkbox" id="include-drills" checked> Inclure les 14 grands coffres du plan</label>
+      </div>
+      <div class="route-stats" id="route-stats"><span><strong id="total-points">140</strong> points du plan</span><span id="building-count">12 bâtiments</span></div>
+      <div class="budget-note" id="budget-note" aria-live="polite"></div>
+      <section id="room-detail" class="room-detail" aria-live="polite" hidden></section>
+      <details class="atlas-section" id="keys-section" open><summary>Clés et portes <span id="key-result-count"></span></summary><nav id="room-list" aria-label="Clés, descriptions et portes correspondantes"></nav></details>
+      <details class="atlas-section" id="buildings-section"><summary>Bâtiments <span id="atlas-building-count"></span></summary><nav id="atlas-building-list" aria-label="Plans de tous les bâtiments"></nav></details>
+      <nav id="building-list" aria-label="Choisir un bâtiment"></nav>
+      <details class="source-notes"><summary>Comment lire le parcours duo</summary><p>Les circuits proposent un ordre de visite pour deux joueurs. Active ou masque leur tracé avec le filtre « Parcours duo ». Les approches des bâtiments restent indicatives.</p><p>Les estimations de points reposent sur les actions créditées, pas sur une garantie de points par meuble entièrement vidé. Suivez vos jauges personnelles pour savoir quand chaque caméra est pleine.</p><p>Les ordres sont comparés sur le réseau routier disponible. Ce n’est pas un temps chronométré ni un optimum garanti pour tous les serveurs.</p></details>
+      <details class="source-notes"><summary>Clés, duo et sources</summary><p>Le parcours suppose les clés des pièces, les outils, la notoriété 3 et des cibles encore créditables. La disponibilité du butin dépend de la partie.</p><p>Avant de partir : notez vos deux jauges, puis un joueur fouille un meuble intact. Vérifiez quelle caméra progresse et de combien. Le partage entre équipiers n’est pas confirmé. Chacun doit obtenir 70 points sur sa propre caméra.</p><p>Plans et positions : <a href="https://robrun.fun/en/" target="_blank" rel="noopener noreferrer">RobRun.fun</a> et <a href="https://robrun.info/map/" target="_blank" rel="noopener noreferrer">ROB RUN Info</a>. <a href="https://robrunguide.app/en-US/items/action_camera_2_cumulative" target="_blank" rel="noopener noreferrer">Caméra : 70 points, notoriété 3</a>.</p><p>Données consultées le 17 novembre 2026.</p></details>
+      <details class="source-notes room-source-notes"><summary>Contenu des salles et points caméra</summary><p>Le contenu d’une salle correspond aux objets placés derrière sa porte. Les petits coffres ailleurs dans le bâtiment sont exclus. Les filtres permettent de choisir séparément les clés et les objets affichés.</p><p>Les noms et descriptions des clés servent à retrouver l’objet dans l’inventaire. Le numéro affiché sur la carte est seulement un repère.</p><div class="points-method"><strong>Gain configuré par action</strong><p>Le barème détaillé par type se trouve dans « Points caméra : barème par type ». La fréquence des déclenchements par meuble entièrement vidé n’est pas exposée.</p><p>Le total d’une commode vidée n’est donc pas certifié : un gain par action ne garantit pas le gain total du meuble.</p></div><p>Emplacements issus des plans et points publiés par <a href="https://robrun.fun/en/" target="_blank" rel="noopener noreferrer">RobRun.fun</a> ; noms, clés et barèmes recoupés avec <a href="https://robrun.info/map/" target="_blank" rel="noopener noreferrer">ROB RUN Info</a>. Le contenu des salles est contrôlé à partir des murs, portes et positions des objets.</p></details>
+    </aside>
+
+    <section class="map-column" aria-label="Carte interactive">
+      <nav class="view-tabs" aria-label="Choisir la carte"><button id="view-doors" type="button" aria-pressed="true">Carte complète</button><button id="view-routes" type="button" aria-pressed="false">Parcours duo</button><button id="view-plants" type="button" aria-pressed="false">Plantes sans clé</button><button id="view-trash" type="button" aria-pressed="false">Poubelles</button></nav>
+      <div class="map-toolbar">
+        <div class="location-heading"><span class="eyebrow" id="location-district">LOOTY BAY · 4 QUARTIERS</span><h2 id="location-title">Carte complète des bâtiments</h2><p id="location-subtitle">Recherche une clé ou un bâtiment, puis zoome pour examiner son plan.</p></div>
+        <button id="overview" class="button outline-button" type="button">Vue d’ensemble</button>
+      </div>
+      <div class="floor-bar" id="floor-bar" hidden></div>
+      <div class="map-stage" id="map-stage">
+        <svg id="map" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Carte de Looty Bay. Choisissez un bâtiment pour examiner ses meubles et ses coffres." tabindex="0">
+          <title>Carte complète de Looty Bay : bâtiments, clés et objets</title>
+          <desc>Recherchez une clé ou un bâtiment, filtrez les objets puis ouvrez un plan par étage. Le parcours duo peut être affiché séparément. Zoom à la molette ou avec les boutons.</desc>
+          <g id="map-base" aria-hidden="true"></g>
+          <g id="route-lines" aria-hidden="true"></g><g id="building-shapes"></g><g id="building-markers"></g><g id="target-leaders"></g><g id="target-markers"></g><g id="computer-markers"></g><g id="door-markers"></g><g id="trash-markers"></g>
+        </svg>
+        <div class="map-controls"><button type="button" id="zoom-in" aria-label="Zoom avant" title="Zoom avant">+</button><button type="button" id="zoom-out" aria-label="Zoom arrière" title="Zoom arrière">−</button><button type="button" id="fit-building" aria-label="Centrer le bâtiment" title="Centrer le bâtiment">⌖</button></div>
+        <div class="north" aria-label="Nord vers le haut"><span>↑</span>N</div>
+        <div class="map-hint" id="map-hint">Clique sur un bâtiment ou une clé pour ouvrir son plan.</div>
+        <div class="map-legend" aria-label="Légende"><span class="route-legend"><i class="route-line">→</i><b id="route-legend-text">A violet · B bleu</b></span><span class="furniture-legend"><i class="dot furniture"></i>Meubles</span><span class="drill-legend"><i class="square drill"></i>Grands coffres</span><span class="small-legend"><i class="diamond small"></i>Petits coffres</span><span class="deposit-legend"><i class="square deposit"></i>Casiers bancaires</span><span class="optional-legend">Grisé = hors de la salle</span><span class="room-computer-legend"><i class="square computer"></i>PC · USB</span><span><i class="key-mark">×</i>Porte à clé</span><span id="gain-note">+ = points / action · total par meuble à confirmer</span></div>
+        <div class="map-attribution">Fond et plans : RobRun.fun · Clés et données : ROB RUN Info</div>
+        <div class="plant-map-legend"><span><i></i>1–8 · points précis</span><span><i class="plant-reported-dot"></i>R · club / hôtels</span><span><i class="plant-zone-dot"></i>Z / G · zones / garages</span><span><i class="plant-prospect-dot"></i>? · prospection</span><small>✓ Vérifié · trait vers le point ou le bâtiment · pointillés = approche</small></div>
+        <div id="trash-map-legend" class="trash-map-legend" hidden><span aria-hidden="true">▤</span><span>Poubelles fouillables · clique pour situer</span></div>
+      </div>
+      <div class="building-summary" id="building-summary"></div>
+    </section>
+  </main>
+</body>
+</html>
